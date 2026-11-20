@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建築様式・時代識別クイズ</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-stone-900 text-stone-100 min-h-screen">
+<div class="max-w-2xl mx-auto px-4 py-8">
+  <header class="text-center mb-8">
+    <h1 class="text-3xl font-bold text-amber-400 mb-1">🏛️ 建築様式クイズ</h1>
+    <p class="text-stone-400 text-sm">ゴシック・バロック・新古典主義・アールヌーボー・モダニズム・ブルータリズム</p>
+  </header>
+
+  <!-- Start Screen -->
+  <div id="startScreen" class="text-center">
+    <div class="bg-stone-800 rounded-2xl p-8 mb-6">
+      <p class="text-lg text-stone-200 mb-4">40問の建築様式識別クイズに挑戦しよう。<br>建築の特徴から様式名を当ててください。</p>
+      <div id="savedScore" class="text-amber-300 text-sm mb-4 hidden"></div>
+      <button id="startBtn" class="bg-amber-500 hover:bg-amber-400 text-stone-900 font-bold px-8 py-3 rounded-xl text-lg transition" onclick="startQuiz()">クイズ開始</button>
+    </div>
+    <div class="grid grid-cols-2 gap-3 text-left">
+      <div class="bg-stone-800 rounded-xl p-4">
+        <div class="font-bold text-amber-300 mb-1">ゴシック</div>
+        <div class="text-xs text-stone-400">尖頭アーチ・フライングバットレス・ステンドグラス・垂直性</div>
+      </div>
+      <div class="bg-stone-800 rounded-xl p-4">
+        <div class="font-bold text-orange-300 mb-1">バロック</div>
+        <div class="text-xs text-stone-400">動的曲線・劇的光影・装飾過多・楕円形平面</div>
+      </div>
+      <div class="bg-stone-800 rounded-xl p-4">
+        <div class="font-bold text-yellow-300 mb-1">新古典主義</div>
+        <div class="text-xs text-stone-400">ギリシャ列柱・三角破風・水平強調・理性的秩序</div>
+      </div>
+      <div class="bg-stone-800 rounded-xl p-4">
+        <div class="font-bold text-green-300 mb-1">アールヌーボー</div>
+        <div class="text-xs text-stone-400">植物的曲線・非対称・自然モチーフ・装飾一体化</div>
+      </div>
+      <div class="bg-stone-800 rounded-xl p-4">
+        <div class="font-bold text-blue-300 mb-1">モダニズム</div>
+        <div class="text-xs text-stone-400">機能主義・平屋根・ガラスカーテンウォール・装飾排除</div>
+      </div>
+      <div class="bg-stone-800 rounded-xl p-4">
+        <div class="font-bold text-purple-300 mb-1">ブルータリズム</div>
+        <div class="text-xs text-stone-400">生コンクリート・重厚・幾何学的・彫刻的質量感</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz Screen -->
+  <div id="quizScreen" class="hidden">
+    <div class="flex justify-between items-center mb-4">
+      <span class="text-stone-400 text-sm">問題 <span id="qNum" class="text-amber-400 font-bold">1</span> / 40</span>
+      <span class="text-stone-400 text-sm">正解: <span id="correctCount" class="text-green-400 font-bold">0</span></span>
+    </div>
+    <div class="w-full bg-stone-700 rounded-full h-2 mb-6">
+      <div id="progressBar" class="bg-amber-500 h-2 rounded-full transition-all duration-300" style="width:0%"></div>
+    </div>
+
+    <div class="bg-stone-800 rounded-2xl p-6 mb-6">
+      <div class="text-xs text-stone-500 uppercase tracking-widest mb-2">この建築物の特徴</div>
+      <p id="questionText" class="text-lg text-stone-100 leading-relaxed"></p>
+      <p id="buildingExample" class="text-sm text-amber-300 mt-3 italic"></p>
+    </div>
+
+    <div id="choicesContainer" class="grid grid-cols-2 gap-3 mb-4"></div>
+
+    <div id="feedbackArea" class="hidden bg-stone-800 rounded-xl p-4 mb-4">
+      <div id="feedbackResult" class="font-bold text-lg mb-2"></div>
+      <div id="feedbackExplanation" class="text-sm text-stone-300"></div>
+      <button class="mt-3 bg-amber-500 hover:bg-amber-400 text-stone-900 font-bold px-6 py-2 rounded-lg transition" onclick="nextQuestion()">次へ →</button>
+    </div>
+  </div>
+
+  <!-- Result Screen -->
+  <div id="resultScreen" class="hidden text-center">
+    <div class="bg-stone-800 rounded-2xl p-8 mb-6">
+      <div class="text-5xl mb-4" id="resultEmoji">🏆</div>
+      <div class="text-3xl font-bold text-amber-400 mb-2" id="finalScore"></div>
+      <div class="text-stone-400 mb-6" id="resultMessage"></div>
+      <div class="grid grid-cols-3 gap-3 mb-6" id="styleBreakdown"></div>
+      <button class="bg-amber-500 hover:bg-amber-400 text-stone-900 font-bold px-8 py-3 rounded-xl text-lg transition" onclick="startQuiz()">もう一度挑戦</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STYLES = ['ゴシック','バロック','新古典主義','アールヌーボー','モダニズム','ブルータリズム'];
+const STYLE_COLORS = {
+  'ゴシック': 'text-amber-300',
+  'バロック': 'text-orange-300',
+  '新古典主義': 'text-yellow-300',
+  'アールヌーボー': 'text-green-300',
+  'モダニズム': 'text-blue-300',
+  'ブルータリズム': 'text-purple-300'
+};
+
+const QUESTIONS = [
+  {style:'ゴシック', desc:'尖頭アーチと肋骨ヴォールト天井が特徴。石造りの壁を薄くするためフライングバットレスで側圧を外部に逃がし、巨大なステンドグラス窓を実現した。', building:'ノートルダム大聖堂（パリ）', exp:'垂直性と光の追求が特徴。フライングバットレスはゴシック固有の構造技術。'},
+  {style:'バロック', desc:'楕円形の中央広間を持ち、光と影の劇的対比で信者を圧倒する空間演出。彫刻・絵画・建築が一体化し、見る者の感情を揺さぶる。', building:'サン・ピエトロ大聖堂（ローマ）', exp:'バロックは対抗宗教改革期に発展。動的な感情表現と圧倒的スケールが特徴。'},
+  {style:'新古典主義', desc:'ギリシャ神殿を模した列柱廊と三角形のペディメント。左右対称の厳格な構成と水平ラインの強調。理性・秩序・市民的威厳を建築で表現。', building:'パンテオン（パリ）', exp:'18世紀啓蒙主義の産物。古代ローマ・ギリシャへの回帰願望。'},
+  {style:'アールヌーボー', desc:'建物の外観に鉄製の植物的曲線が絡みつく。窓枠・手すり・装飾が自然の蔓草や花のモチーフ。構造と装飾が分離せず一体化。', building:'タッセル邸（ブリュッセル）', exp:'1890〜1910年頃に流行。自然形態の有機的曲線が特徴。'},
+  {style:'モダニズム', desc:'ガラスとスチールのカーテンウォールで覆われた高層ビル。平屋根・水平連続窓・柱で持ち上げられた1階ピロティ。装飾は一切ない。', building:'ファルンズワース邸（イリノイ）', exp:'ミース・ファン・デル・ローエらが確立。「装飾は罪悪」の機能主義思想。'},
+  {style:'ブルータリズム', desc:'型枠のテクスチャが残る打ち放しコンクリートの重厚な塊。窓は小さく穿たれた開口部。建物全体が彫刻的な幾何学形態を成す。', building:'バービカン・センター（ロンドン）', exp:'1950〜70年代に隆盛。béton brut（生コンクリート）が語源。'},
+  {style:'ゴシック', desc:'飛び梁（フライングバットレス）が壁から離れた場所で側圧を支える。高さと光を追求した結果生まれた外付け支持構造。', building:'シャルトル大聖堂（フランス）', exp:'フライングバットレスはゴシックのアイコン的構造要素。'},
+  {style:'バロック', desc:'階段・水・彫刻が一体化した広場設計。噴水から流れる水音と視覚的動きで訪問者を包み込む総合芸術的空間。', building:'トレヴィの泉（ローマ）', exp:'バロックは建築・彫刻・水景を統合した総合芸術として都市空間を演出。'},
+  {style:'新古典主義', desc:'ドリス式・イオニア式・コリント式の列柱オーダーを正確に復元。建物正面は神殿のように列柱が並び、市民の権利と理性を象徴。', building:'ベルリン旧博物館', exp:'啓蒙主義と市民革命の時代の公共建築はギリシャ様式を採用した。'},
+  {style:'アールヌーボー', desc:'地下鉄入口の鉄製カーテンが芽吹く植物のように有機的に広がる。植物の成長を模した曲線的なデザインは街の景観に溶け込む。', building:'パリ地下鉄エントランス（ギマール）', exp:'アールヌーボーは産業素材（鉄）を使いながら有機的な表現を追求。'},
+  {style:'モダニズム', desc:'白いキューブ状の建物が細い柱（ピロティ）の上に持ち上げられている。屋上テラス・自由な平面・横長連続窓・自由なファサード。', building:'サヴォア邸（プワシー）', exp:'コルビュジエの「近代建築の5原則」を体現した作品。'},
+  {style:'ブルータリズム', desc:'巨大なコンクリートの塊が空中に張り出す。内部には巨大な吹き抜けと複雑な動線。公共建築の権力と機能を誇示するような重量感。', building:'ボストン市庁舎（米国）', exp:'1960〜70年代の公共建築に多用。民主主義的権威を表現しようとした。'},
+  {style:'ゴシック', desc:'天井に複雑に交差するリブ（肋骨）が扇状に広がる扇形ヴォールト。後期ゴシックの技術的頂点で、天井が花開いたような豪華な表情を持つ。', building:'ウェストミンスター大聖堂', exp:'後期ゴシックのファン・ヴォールトは英国で発展した技術。'},
+  {style:'バロック', desc:'宮殿の鏡の間は17メートルの高さに及ぶアーチ天井に描かれた絵画、73枚の鏡、金箔装飾で満たされた絢爛豪華な空間。', building:'ヴェルサイユ宮殿（鏡の間）', exp:'フランス・バロックの集大成。王の権力を視覚化した宮廷建築。'},
+  {style:'新古典主義', desc:'コリント式の柱が円形に並ぶ円柱廊。ドームの下に開いた円形の天窓から自然光が差し込む。古代ローマ建築の完璧な復興。', building:'パリ・パンテオン', exp:'フランス革命後の偉人神殿。新古典主義的厳格さを体現。'},
+  {style:'アールヌーボー', desc:'建物外壁がタイルのモザイクで覆われ、龍やトカゲが泳ぐ。煙突は騎士の兜の形。全体が子供の夢のような色彩と曲面で構成。', building:'カサ・バトリョ（バルセロナ）', exp:'ガウディのカタルーニャ・モデルニスモはアールヌーボーの地方的展開。'},
+  {style:'モダニズム', desc:'正方形のグリッドを基本単位とした工場建築。柱と梁だけで空間を構成し、壁は構造体でなく単なる仕切りとなった。鉄筋コンクリートの革命。', building:'ファグス工場（ドイツ）', exp:'グロピウスの初期作品。モダニズムの先駆けとなった工場建築。'},
+  {style:'ブルータリズム', desc:'住宅ユニットが積み重なり、一体となった巨大な居住機械。コンクリート打ち放しの表面に各戸のバルコニーが突き出す。内部には商店街と保育所。', building:'ユニテ・ダビタシオン（マルセイユ）', exp:'コルビュジエの集合住宅。ブルータリズムの源流となった作品。'},
+  {style:'ゴシック', desc:'バラ窓の内側に色彩豊かなステンドグラスが嵌め込まれている。聖書の場面を光のモザイクで語る「石の聖書」と呼ばれる壁面。', building:'サント・シャペル（パリ）', exp:'ゴシックのステンドグラスは文字を読めない信者への視覚的聖書。'},
+  {style:'バロック', desc:'建物平面が凸面と凹面を交互に繰り返す波打った立面。塔が螺旋状にねじれながら天空へと伸びる動的で劇的な構成。', building:'サンタニェーゼ・イン・アゴーネ（ローマ）', exp:'ボッロミーニのバロック建築。凹凸のうねりが特徴。'},
+  {style:'新古典主義', desc:'入口に8本のコリント式列柱が並ぶ正面ファサード。石造の基壇の上に厳粛な神殿形式が載る。建物全体が幾何学的秩序で統一。', building:'スコットランド国立記念碑（エジンバラ）', exp:'ギリシャ様式の公共建築は市民的価値観の象徴として世界に広まった。'},
+  {style:'アールヌーボー', desc:'木造の建物に彫刻的に削り出した曲線装飾が施される。窓まわりの木製フレームが花冠のように装飾化され、自然との調和を体現。', building:'ホルタ邸（ブリュッセル）', exp:'ヴィクトール・オルタはベルギー・アールヌーボーの創始者。'},
+  {style:'モダニズム', desc:'高さ443メートルの鉄骨とガラスの塔。外部に構造フレームを露出させたエクスポーズド・ストラクチャー。装飾ゼロの純粋な垂直線。', building:'シアーズ・タワー（シカゴ）', exp:'シカゴ派モダニズム建築。鉄骨の合理的表現が特徴。'},
+  {style:'ブルータリズム', desc:'キャンパス全体がコンクリートの高架歩道でつながれた建築群。各棟は独立した幾何学形態で構成され、全体がひとつの都市のように機能。', building:'イースト・アングリア大学（英国）', exp:'1960年代英国大学建築にブルータリズムが多用された。'},
+  {style:'ゴシック', desc:'尖塔が林立し、天を目指すような高さを持つ大聖堂。内部の柱は木の束のように細く、ヴォールト天井まで視線を誘導する強烈な垂直性。', building:'ケルン大聖堂（ドイツ）', exp:'ゴシックの垂直性は魂の天への上昇を象徴する神学的表現。'},
+  {style:'バロック', desc:'広場全体が楕円形の列柱廊で抱きかかえられ、訪問者を導く。中央にオベリスクが立ち、2つの噴水が均衡を保つ。空間演出の頂点。', building:'サン・ピエトロ広場（ローマ）', exp:'ベルニーニの設計。バロックの都市空間設計の最高傑作。'},
+  {style:'新古典主義', desc:'パリの中心に凱旋門形式の記念碑的建築。12本の道路が放射状に伸びる交差点の中心に位置し、国家の栄光を体現する都市装置。', building:'エトワール凱旋門（パリ）', exp:'ナポレオンが命じた新古典主義的記念碑建築の典型。'},
+  {style:'アールヌーボー', desc:'建物全体が自然の洞窟または生命体を思わせる。外壁の石の肌理・内部の柱が樹木のように枝分かれし、室内に森の中にいるような感覚。', building:'グエル公園（バルセロナ）', exp:'ガウディの代表作。自然有機形態の究極的建築表現。'},
+  {style:'モダニズム', desc:'ガラス張りのカーテンウォールで覆われた直方体の超高層ビル群。各フロアは同一のグリッド。建物内外の境界が消失し透明性が生まれる。', building:'レバー・ハウス（ニューヨーク）', exp:'インターナショナル・スタイルの確立。ミース的透明性の具現化。'},
+  {style:'ブルータリズム', desc:'外部に剥き出しになった設備配管・換気ダクト・エレベーターシャフトが色分けされ、建物の内臓を外側に見せるインサイドアウト・デザイン。', building:'ポンピドゥー・センター（パリ）', exp:'ハイテク・ブルータリズムの代表作。機能の透明化が思想。'},
+  {style:'ゴシック', desc:'建物外部の各頂点に「フィニアル」と呼ばれる尖った石製装飾が立つ。壁面は植物的な「トレーサリー」（透かし彫り）で覆われ、石の彫刻作品となっている。', building:'ウェストミンスター宮殿', exp:'装飾的細部の精密さがゴシック様式の特徴。'},
+  {style:'バロック', desc:'天井画が実際の建築空間から空に開いたように描かれたトロンプルイユ（だまし絵）技法。地上から見上げると無限の空間が広がるように見える。', building:'イエズス会教会天井（ウィーン）', exp:'バロックの幻想空間演出の最高技術。見る者の知覚を操る。'},
+  {style:'新古典主義', desc:'白大理石の正面に8本の列柱が並ぶ法廷・立法府。建物の権威と公正さを古代民主主義の発祥地ギリシャの形式で表現。', building:'ニューヨーク市庁舎', exp:'米国の公共建築は新古典主義を民主主義の象徴として多用した。'},
+  {style:'アールヌーボー', desc:'書籍・ポスター・商品パッケージに流れるような女性の髪と植物が一体化した図像。建築でなく工芸・グラフィックにも様式が展開した例。', building:'ミュシャのポスター（チェコ）', exp:'アールヌーボーは建築にとどまらず工芸・グラフィック全体の運動。'},
+  {style:'モダニズム', desc:'60階建て以上の超高層ビルがすべて同一の黒いスチールとガラスで覆われる。柱は外部に見えず、内部空間が最大化された「ユニバーサル・スペース」。', building:'シーグラム・ビルディング（ニューヨーク）', exp:'ミースの最高傑作。厳格な比例と細部の完璧さがモダニズムの極致。'},
+  {style:'ブルータリズム', desc:'住宅団地が空中回廊で連結された「デッキ・アクセス」方式。コンクリートの壁面には型枠跡が残り、戦後復興期の合理的建設を示す。', building:'パーク・ヒル団地（シェフィールド）', exp:'英国戦後住宅政策とブルータリズムが結びついた代表例。'},
+  {style:'ゴシック', desc:'ステンドグラスを支えるために壁を最小化し、代わりに細いリブと柱だけで屋根を支える構造。建物内部が光で満たされる「光の建築」。', building:'サント・シャペル礼拝堂', exp:'ゴシックの極致。壁がなく窓だけで覆われた透明な石造建築。'},
+  {style:'バロック', desc:'宮殿前庭が放射状の庭園道路と整形式庭園で構成される。建物・庭・都市が一直線の軸線で統一された絶対王政の権力装置。', building:'ヴェルサイユ宮殿と庭園', exp:'バロックの都市計画は権力の可視化が目的。無限に続く軸線が特徴。'},
+  {style:'新古典主義', desc:'白亜の大理石の柱廊が周囲を取り巻く円形のドーム建築。内部は低く水平的でローマ万神殿を参照。民主主義・理性・啓蒙の象徴。', building:'米国議会議事堂（ワシントンD.C.）', exp:'新古典主義は米国建国初期の公共建築のほぼすべてに採用された。'},
+  {style:'アールヌーボー', desc:'外壁全体がセラミックタイルと彩色漆喰で覆われ、波打つ屋根が月並みな形状を逸脱。建物全体が生命体のように有機的に成長したような外観。', building:'カサ・ミラ（バルセロナ）', exp:'ガウディの代表作。石灰岩の崖を模した曲面外壁が特徴。'},
+  {style:'モダニズム', desc:'コンクリートの薄いシェル（貝殻状曲面）が大屋根を形成。柱を最小化して広大な無柱空間を実現した。軽さと強さの矛盾を構造的に解決。', building:'シドニー・オペラハウス', exp:'後期モダニズムのシェル構造。構造的合理性から生まれた有機的形態。'},
+  {style:'ブルータリズム', desc:'砦のような外観を持つ大学図書館。窓のない厚いコンクリートの壁と小さなスリット状開口部。外部に対して閉じた「内向きの城」。', building:'ボストン市立図書館（増築棟）', exp:'コンクリートの重厚感で市民的権威を表現したブルータリズム公共建築。'},
+];
+
+let currentQuestions = [];
+let currentIndex = 0;
+let correctCount = 0;
+let answered = false;
+let styleResults = {};
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startQuiz() {
+  currentQuestions = shuffle(QUESTIONS).slice(0, 40);
+  currentIndex = 0;
+  correctCount = 0;
+  answered = false;
+  styleResults = {};
+  STYLES.forEach(s => styleResults[s] = {correct: 0, total: 0});
+
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('resultScreen').classList.add('hidden');
+  document.getElementById('quizScreen').classList.remove('hidden');
+  showQuestion();
+}
+
+function showQuestion() {
+  const q = currentQuestions[currentIndex];
+  document.getElementById('qNum').textContent = currentIndex + 1;
+  document.getElementById('correctCount').textContent = correctCount;
+  document.getElementById('progressBar').style.width = (currentIndex / 40 * 100) + '%';
+  document.getElementById('questionText').textContent = q.desc;
+  document.getElementById('buildingExample').textContent = '参考建築物: ' + q.building;
+  document.getElementById('feedbackArea').classList.add('hidden');
+  answered = false;
+
+  // Build choices (correct + 3 wrong)
+  const wrong = shuffle(STYLES.filter(s => s !== q.style)).slice(0, 3);
+  const choices = shuffle([q.style, ...wrong]);
+
+  const container = document.getElementById('choicesContainer');
+  container.innerHTML = '';
+  choices.forEach(choice => {
+    const btn = document.createElement('button');
+    btn.className = 'bg-stone-700 hover:bg-stone-600 border-2 border-stone-600 text-stone-100 font-semibold px-4 py-3 rounded-xl text-sm transition';
+    btn.setAttribute('aria-label', choice + 'を選択');
+    btn.textContent = choice;
+    btn.onclick = () => selectAnswer(choice, q.style, q.exp);
+    container.appendChild(btn);
+  });
+}
+
+function selectAnswer(chosen, correct, explanation) {
+  if (answered) return;
+  answered = true;
+
+  const isCorrect = chosen === correct;
+  if (isCorrect) {
+    correctCount++;
+    document.getElementById('correctCount').textContent = correctCount;
+  }
+  styleResults[correct].total++;
+  if (isCorrect) styleResults[correct].correct++;
+
+  // Highlight buttons
+  const btns = document.querySelectorAll('#choicesContainer button');
+  btns.forEach(btn => {
+    btn.disabled = true;
+    if (btn.textContent === correct) {
+      btn.className = 'bg-green-700 border-2 border-green-400 text-white font-semibold px-4 py-3 rounded-xl text-sm';
+    } else if (btn.textContent === chosen && !isCorrect) {
+      btn.className = 'bg-red-800 border-2 border-red-500 text-white font-semibold px-4 py-3 rounded-xl text-sm';
+    } else {
+      btn.className = 'bg-stone-700 border-2 border-stone-600 text-stone-400 font-semibold px-4 py-3 rounded-xl text-sm opacity-50';
+    }
+  });
+
+  const feedbackArea = document.getElementById('feedbackArea');
+  const feedbackResult = document.getElementById('feedbackResult');
+  const feedbackExplanation = document.getElementById('feedbackExplanation');
+
+  feedbackResult.textContent = isCorrect ? '✅ 正解！' : '❌ 不正解 — 正解: ' + correct;
+  feedbackResult.className = 'font-bold text-lg mb-2 ' + (isCorrect ? 'text-green-400' : 'text-red-400');
+  feedbackExplanation.textContent = explanation;
+  feedbackArea.classList.remove('hidden');
+}
+
+function nextQuestion() {
+  currentIndex++;
+  if (currentIndex >= 40) {
+    showResult();
+  } else {
+    showQuestion();
+  }
+}
+
+function showResult() {
+  document.getElementById('quizScreen').classList.add('hidden');
+  document.getElementById('resultScreen').classList.remove('hidden');
+
+  const pct = Math.round(correctCount / 40 * 100);
+  document.getElementById('finalScore').textContent = correctCount + ' / 40点（' + pct + '%）';
+
+  let emoji = '😅', msg = '';
+  if (pct >= 90) { emoji = '🏆'; msg = '建築史マスター！完璧な識別能力です。'; }
+  else if (pct >= 75) { emoji = '🥇'; msg = '優秀！建築様式を深く理解しています。'; }
+  else if (pct >= 60) { emoji = '🥈'; msg = 'なかなかの成績。もう少しで達人の域。'; }
+  else if (pct >= 40) { emoji = '🥉'; msg = '基礎はできています。さらに学習を重ねましょう。'; }
+  else { emoji = '📚'; msg = '各様式の特徴を再確認してから再挑戦を！'; }
+
+  document.getElementById('resultEmoji').textContent = emoji;
+  document.getElementById('resultMessage').textContent = msg;
+
+  const breakdown = document.getElementById('styleBreakdown');
+  breakdown.innerHTML = '';
+  STYLES.forEach(s => {
+    const r = styleResults[s];
+    if (r.total > 0) {
+      const div = document.createElement('div');
+      div.className = 'bg-stone-700 rounded-lg p-3';
+      const pctS = Math.round(r.correct / r.total * 100);
+      div.innerHTML = '<div class="text-xs ' + STYLE_COLORS[s] + ' font-bold mb-1">' + s + '</div><div class="text-sm text-stone-200">' + r.correct + '/' + r.total + ' (' + pctS + '%)</div>';
+      breakdown.appendChild(div);
+    }
+  });
+
+  const best = JSON.parse(localStorage.getItem('arch_quiz_best') || '0');
+  if (correctCount > best) {
+    localStorage.setItem('arch_quiz_best', correctCount);
+  }
+  const savedDiv = document.getElementById('savedScore');
+  const newBest = Math.max(correctCount, best);
+  savedDiv.textContent = '自己ベスト: ' + newBest + ' / 40';
+  savedDiv.classList.remove('hidden');
+}
+
+// Load best score on page load
+window.onload = () => {
+  const best = localStorage.getItem('arch_quiz_best');
+  if (best) {
+    const div = document.getElementById('savedScore');
+    div.textContent = '自己ベスト: ' + best + ' / 40';
+    div.classList.remove('hidden');
+  }
+};
+</script>
+</body>
+</html>
